@@ -107,22 +107,34 @@
     .nav-links { display: none; }
   }
 
-  /* ---------- Hero ---------- */
+  /* ---------- Hero (split: text panel + half-width photo) ---------- */
   .hero {
     position: relative;
     min-height: 100svh;
     display: flex;
-    align-items: flex-end;
+    align-items: stretch;
     overflow: hidden;
   }
 
-  .hero-photo {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
+  .hero-text {
+    flex: 1 1 56%;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: clamp(90px, 14vh, 140px) clamp(20px, 4vw, 48px) clamp(48px, 8vh, 96px) clamp(20px, 5vw, 56px);
+    background: var(--bg);
   }
 
-  .hero-photo img {
+  .hero-photo-half {
+    flex: 1 1 44%;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .hero-photo-half img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -130,20 +142,39 @@
     filter: grayscale(0.2) contrast(1.08) saturate(0.95) brightness(0.9);
   }
 
-  .hero-photo::after {
+  .hero-photo-half::after {
     content: "";
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(180deg, rgba(6,10,16,0.15) 0%, rgba(6,10,16,0.35) 45%, rgba(6,10,16,0.96) 92%),
-      linear-gradient(90deg, rgba(6,10,16,0.55) 0%, rgba(6,10,16,0.05) 45%);
+      linear-gradient(90deg, rgba(6,10,16,0.92) 0%, rgba(6,10,16,0) 24%),
+      linear-gradient(180deg, rgba(6,10,16,0) 55%, rgba(6,10,16,0.88) 100%),
+      linear-gradient(0deg, rgba(6,10,16,0.3) 0%, rgba(6,10,16,0) 20%);
   }
 
-  .hero-inner {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    padding: 0 clamp(20px, 5vw, 56px) clamp(48px, 8vh, 96px);
+  @media (max-width: 900px) {
+    .hero {
+      flex-direction: column;
+      min-height: auto;
+    }
+
+    .hero-photo-half {
+      flex: none;
+      height: 44vh;
+      order: -1;
+    }
+
+    .hero-photo-half::after {
+      background: linear-gradient(180deg, rgba(6,10,16,0.1) 35%, rgba(6,10,16,0.96) 100%);
+    }
+
+    .hero-text {
+      padding: 32px clamp(20px, 6vw, 40px) 56px;
+    }
+
+    .scroll-cue {
+      display: none;
+    }
   }
 
   .status-pill {
@@ -179,7 +210,7 @@
   .hero-name {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 700;
-    font-size: clamp(3.2rem, 12vw, 8.5rem);
+    font-size: clamp(2.6rem, 9vw, 6.2rem);
     line-height: 0.92;
     letter-spacing: -0.02em;
     text-transform: uppercase;
@@ -380,10 +411,7 @@
   </nav>
 
   <section class="hero">
-    <div class="hero-photo">
-      <img src="images/profile.jpg" alt="Danish Erhan">
-    </div>
-    <div class="hero-inner">
+    <div class="hero-text">
       <div class="status-pill">Offshore Engineering Intern · Seatrium</div>
       <h1 class="hero-name">DANISH<br><span class="accent">ERHAN</span></h1>
       <p class="hero-role">Naval Architecture &amp; Marine Engineering Graduate — combining offshore engineering with AI-driven simulations and web technologies.</p>
@@ -401,6 +429,9 @@
           <div class="value">EN · MY · ID</div>
         </div>
       </div>
+    </div>
+    <div class="hero-photo-half">
+      <img src="images/profile.jpg" alt="Danish Erhan">
     </div>
     <div class="scroll-cue">Scroll</div>
   </section>

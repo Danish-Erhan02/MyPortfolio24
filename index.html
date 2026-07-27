@@ -10,135 +10,164 @@
 <style>
   :root {
     --bg: #060a10;
-    --surface: #0c131c;
-    --surface-2: #101a26;
-    --ink: #e9f4f6;
-    --muted: #7d92a0;
+    --ink: #f2f8f9;
+    --muted: #92a6b3;
     --cyan: #3ee6c4;
     --amber: #ffb454;
     --line: rgba(62, 230, 196, 0.16);
   }
 
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  html {
-    scroll-behavior: smooth;
-  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
 
   body {
     background: var(--bg);
     color: var(--ink);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     line-height: 1.65;
-    position: relative;
-    overflow-x: hidden;
   }
 
-  canvas#grid {
+  a { color: inherit; }
+
+  /* ---------- Top nav ---------- */
+  .topnav {
     position: fixed;
-    inset: 0;
-    z-index: 0;
-    opacity: 0.55;
-  }
-
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    background:
-      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(62, 230, 196, 0.10), transparent 60%),
-      radial-gradient(ellipse 700px 500px at 110% 30%, rgba(255, 180, 84, 0.06), transparent 60%);
-    pointer-events: none;
-  }
-
-  .container {
-    position: relative;
-    z-index: 1;
-    max-width: 780px;
-    margin: 0 auto;
-    padding: 0 24px;
-  }
-
-  /* Huge arc-shaped photo panel, right side of viewport (desktop only) */
-  .photo-arc {
-    position: fixed;
-    top: 50%;
-    right: -8vw;
-    transform: translateY(-50%);
-    width: 46vw;
-    max-width: 620px;
-    aspect-ratio: 1 / 1;
-    z-index: 2;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 1px solid rgba(62, 230, 196, 0.35);
-    box-shadow:
-      0 0 0 14px rgba(6, 10, 16, 0.9),
-      0 0 0 15px rgba(62, 230, 196, 0.25),
-      0 0 60px 10px rgba(62, 230, 196, 0.12);
-    display: none;
-  }
-
-  .photo-arc img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: 50% 20%;
-    filter: grayscale(0.25) contrast(1.05) saturate(0.9);
-  }
-
-  .photo-arc::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(circle at 30% 20%, rgba(62, 230, 196, 0.16), transparent 55%),
-      linear-gradient(200deg, rgba(6, 10, 16, 0) 55%, rgba(6, 10, 16, 0.55) 100%);
-    pointer-events: none;
-  }
-
-  @media (min-width: 1200px) {
-    .photo-arc {
-      display: block;
-    }
-
-    .container {
-      margin: 0;
-      margin-left: max(6vw, 40px);
-      max-width: 620px;
-    }
-  }
-
-  @media (min-width: 1600px) {
-    .container {
-      margin-left: max(9vw, 80px);
-    }
-  }
-
-  .eyebrow {
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--cyan);
-    font-size: 0.78rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    font-weight: 500;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
+    padding: 20px clamp(20px, 5vw, 56px);
+    transition: background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease;
+    border-bottom: 1px solid transparent;
   }
 
-  .eyebrow::before {
-    content: "";
+  .topnav.solid {
+    background: rgba(6, 10, 16, 0.82);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .brand {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .brand span {
     width: 7px;
     height: 7px;
     border-radius: 50%;
     background: var(--cyan);
     box-shadow: 0 0 10px 2px rgba(62, 230, 196, 0.7);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: clamp(14px, 2.5vw, 34px);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    list-style: none;
+  }
+
+  .nav-links a {
+    text-decoration: none;
+    color: var(--muted);
+    transition: color 0.2s ease;
+  }
+
+  .nav-links a:hover, .nav-links a:focus-visible { color: var(--cyan); }
+
+  .nav-socials {
+    display: flex;
+    gap: 16px;
+  }
+
+  .nav-socials a {
+    color: var(--muted);
+    text-decoration: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: color 0.2s ease;
+  }
+
+  .nav-socials a:hover, .nav-socials a:focus-visible { color: var(--cyan); }
+
+  @media (max-width: 780px) {
+    .nav-links { display: none; }
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+  }
+
+  .hero-photo {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .hero-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 18%;
+    filter: grayscale(0.2) contrast(1.08) saturate(0.95) brightness(0.9);
+  }
+
+  .hero-photo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(6,10,16,0.15) 0%, rgba(6,10,16,0.35) 45%, rgba(6,10,16,0.96) 92%),
+      linear-gradient(90deg, rgba(6,10,16,0.55) 0%, rgba(6,10,16,0.05) 45%);
+  }
+
+  .hero-inner {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    padding: 0 clamp(20px, 5vw, 56px) clamp(48px, 8vh, 96px);
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    border: 1px solid var(--line);
+    background: rgba(62, 230, 196, 0.06);
+    padding: 8px 14px;
+    border-radius: 999px;
+    margin-bottom: 22px;
+  }
+
+  .status-pill::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
     animation: pulse-dot 2.4s ease-in-out infinite;
   }
 
@@ -147,64 +176,120 @@
     50% { opacity: 0.4; transform: scale(0.7); }
   }
 
-  header {
-    padding: 90px 0 44px;
+  .hero-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(3.2rem, 12vw, 8.5rem);
+    line-height: 0.92;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
   }
 
-  header h1 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: clamp(2.2rem, 6vw, 3.2rem);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    margin-top: 16px;
+  .hero-name .accent {
     background: linear-gradient(120deg, #f2fbfa 0%, #a8ece0 45%, #3ee6c4 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
-  header p.role {
-    margin-top: 10px;
-    color: var(--muted);
-    font-size: 1.05rem;
+  .hero-role {
+    margin-top: 18px;
     font-family: 'JetBrains Mono', monospace;
-    letter-spacing: -0.01em;
+    font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+    color: var(--muted);
+    max-width: 520px;
   }
 
-  .signal {
-    margin-top: 34px;
-    height: 46px;
-    width: 100%;
-    display: block;
+  .hero-meta {
+    margin-top: 40px;
+    display: flex;
+    gap: clamp(28px, 6vw, 64px);
+    flex-wrap: wrap;
+    border-top: 1px solid var(--line);
+    padding-top: 20px;
   }
 
-  .signal path {
-    fill: none;
-    stroke: var(--cyan);
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    filter: drop-shadow(0 0 6px rgba(62, 230, 196, 0.55));
+  .hero-meta div .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 6px;
   }
+
+  .hero-meta div .value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+
+  .scroll-cue {
+    position: absolute;
+    right: clamp(20px, 5vw, 56px);
+    bottom: clamp(28px, 6vh, 60px);
+    z-index: 1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    writing-mode: vertical-rl;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .scroll-cue::after {
+    content: "";
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(var(--cyan), transparent);
+  }
+
+  /* ---------- Background grid canvas (below hero) ---------- */
+  canvas#grid {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.45;
+  }
+
+  /* ---------- Main sections ---------- */
+  main { position: relative; }
 
   section {
-    padding: 46px 0;
+    padding: clamp(64px, 10vh, 120px) clamp(20px, 5vw, 56px);
     border-top: 1px solid var(--line);
+    max-width: 1100px;
+    margin: 0 auto;
   }
 
-  h2 {
+  .stack-header {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(2.6rem, 7vw, 5rem);
+    line-height: 0.94;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    margin-bottom: 24px;
+  }
+
+  .stack-header .line2 { color: var(--cyan); }
+
+  .section-copy {
+    max-width: 620px;
+    color: #d3e4e8;
+    font-size: 1.08rem;
+  }
+
+  .eyebrow-tag {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.78rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--amber);
-    font-weight: 500;
-    margin-bottom: 20px;
-  }
-
-  .about p {
-    font-size: 1.08rem;
-    color: #d3e4e8;
-    max-width: 640px;
+    margin-bottom: 14px;
   }
 
   .languages ul {
@@ -215,133 +300,118 @@
   }
 
   .languages li {
-    position: relative;
     border: 1px solid var(--line);
     background: rgba(62, 230, 196, 0.04);
-    padding: 8px 16px;
+    padding: 10px 18px;
     border-radius: 6px;
-    font-size: 0.88rem;
+    font-size: 0.9rem;
     font-family: 'JetBrains Mono', monospace;
-    color: var(--ink);
     transition: border-color 0.2s ease, background 0.2s ease;
   }
 
-  .languages li:hover {
-    border-color: var(--cyan);
-    background: rgba(62, 230, 196, 0.09);
-  }
+  .languages li:hover { border-color: var(--cyan); background: rgba(62, 230, 196, 0.09); }
 
-  .projects p.placeholder {
+  .projects .placeholder {
     color: var(--muted);
     font-size: 0.98rem;
     border: 1px dashed var(--line);
     border-radius: 8px;
-    padding: 18px 20px;
+    padding: 20px 22px;
+    max-width: 620px;
   }
 
-  .links {
+  /* ---------- Footer / contact ---------- */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: clamp(64px, 10vh, 120px) clamp(20px, 5vw, 56px) 40px;
+  }
+
+  .footer-links {
     display: flex;
-    gap: 28px;
+    gap: clamp(20px, 5vw, 40px);
     flex-wrap: wrap;
+    margin-top: 30px;
   }
 
-  .links a {
-    color: var(--ink);
+  .footer-links a {
     text-decoration: none;
-    font-weight: 600;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.92rem;
-    letter-spacing: 0.01em;
+    font-weight: 600;
+    font-size: 0.95rem;
     padding-bottom: 4px;
     border-bottom: 1px solid var(--line);
     transition: color 0.2s ease, border-color 0.2s ease;
   }
 
-  .links a:hover,
-  .links a:focus-visible {
-    color: var(--cyan);
-    border-color: var(--cyan);
-  }
+  .footer-links a:hover, .footer-links a:focus-visible { color: var(--cyan); border-color: var(--cyan); }
 
-  footer {
-    padding: 40px 0 80px;
-    color: var(--muted);
-    font-size: 0.8rem;
-    font-family: 'JetBrains Mono', monospace;
+  .footer-bottom {
+    margin-top: 70px;
+    padding-top: 24px;
     border-top: 1px solid var(--line);
-  }
-
-  .photo-inline {
-    display: block;
-    width: 148px;
-    height: 148px;
-    border-radius: 50%;
-    overflow: hidden;
-    margin-bottom: 22px;
-    border: 1px solid rgba(62, 230, 196, 0.35);
-    box-shadow: 0 0 0 8px rgba(62, 230, 196, 0.08), 0 0 40px rgba(62, 230, 196, 0.1);
-  }
-
-  .photo-inline img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: 50% 20%;
-    filter: grayscale(0.25) contrast(1.05) saturate(0.9);
-  }
-
-  @media (min-width: 1200px) {
-    .photo-inline {
-      display: none;
-    }
-  }
-
-  @media (max-width: 600px) {
-    header {
-      padding: 64px 0 32px;
-    }
-
-    section {
-      padding: 36px 0;
-    }
-
-    .photo-inline {
-      width: 116px;
-      height: 116px;
-    }
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .eyebrow::before {
-      animation: none;
-    }
+    .status-pill::before { animation: none; }
   }
 </style>
 </head>
 <body>
 
+  <nav class="topnav" id="topnav">
+    <div class="brand"><span></span>DE</div>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#languages">Languages</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="nav-socials">
+      <a href="https://linkedin.com/in/your-profile" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="https://github.com/danish-erhan02" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-photo">
+      <img src="images/profile.jpg" alt="Danish Erhan">
+    </div>
+    <div class="hero-inner">
+      <div class="status-pill">Offshore Engineering Intern · Seatrium</div>
+      <h1 class="hero-name">DANISH<br><span class="accent">ERHAN</span></h1>
+      <p class="hero-role">Naval Architecture &amp; Marine Engineering Graduate — combining offshore engineering with AI-driven simulations and web technologies.</p>
+      <div class="hero-meta">
+        <div>
+          <div class="label">Currently</div>
+          <div class="value">Interning at Seatrium</div>
+        </div>
+        <div>
+          <div class="label">Focus</div>
+          <div class="value">Offshore Eng. &amp; AI Simulation</div>
+        </div>
+        <div>
+          <div class="label">Languages</div>
+          <div class="value">EN · MY · ID</div>
+        </div>
+      </div>
+    </div>
+    <div class="scroll-cue">Scroll</div>
+  </section>
+
   <canvas id="grid"></canvas>
 
-  <div class="photo-arc">
-    <img src="images/profile.jpg" alt="Danish Erhan">
-  </div>
-
-  <div class="container">
-    <header>
-      <div class="photo-inline">
-        <img src="images/profile.jpg" alt="Danish Erhan">
-      </div>
-      <div class="eyebrow">Systems Online</div>
-      <h1>Danish Erhan</h1>
-      <p class="role">Naval Architecture &amp; Marine Engineering Graduate</p>
-      <svg class="signal" viewBox="0 0 700 46" preserveAspectRatio="none" aria-hidden="true">
-        <path id="signal-path" d="M0,23 L700,23" />
-      </svg>
-    </header>
-
-    <section class="about">
-      <h2>// About</h2>
-      <p>
+  <main>
+    <section class="about" id="about">
+      <div class="eyebrow-tag">// About</div>
+      <h2 class="stack-header">THE<br><span class="line2">ENGINEER</span></h2>
+      <p class="section-copy">
         I'm a Naval Architecture and Marine Engineering graduate currently interning
         at Seatrium, combining offshore engineering with AI-driven simulations and
         web technologies. Fluent in English, Malay, and Bahasa Indonesia,
@@ -350,8 +420,9 @@
       </p>
     </section>
 
-    <section class="languages">
-      <h2>// Languages</h2>
+    <section class="languages" id="languages">
+      <div class="eyebrow-tag">// Languages</div>
+      <h2 class="stack-header">SPOKEN<br><span class="line2">FLUENTLY</span></h2>
       <ul>
         <li>English</li>
         <li>Malay</li>
@@ -359,27 +430,35 @@
       </ul>
     </section>
 
-    <section class="projects">
-      <h2>// Projects</h2>
+    <section class="projects" id="projects">
+      <div class="eyebrow-tag">// Projects</div>
+      <h2 class="stack-header">WHAT I'M<br><span class="line2">BUILDING</span></h2>
       <p class="placeholder">Add your projects here — a short description and a link for each.</p>
     </section>
+  </main>
 
-    <section class="contact">
-      <h2>// Contact</h2>
-      <div class="links">
-        <a href="mailto:your.email@example.com">Email</a>
-        <a href="https://linkedin.com/in/your-profile" target="_blank" rel="noopener">LinkedIn</a>
-        <a href="https://github.com/danish-erhan02" target="_blank" rel="noopener">GitHub</a>
-      </div>
-    </section>
-
-    <footer>
-      &copy; 2026 Danish Erhan. Built with HTML &amp; CSS.
-    </footer>
-  </div>
+  <footer id="contact">
+    <div class="eyebrow-tag">// Contact</div>
+    <h2 class="stack-header">LET'S<br><span class="line2">CONNECT</span></h2>
+    <div class="footer-links">
+      <a href="mailto:your.email@example.com">Email</a>
+      <a href="https://linkedin.com/in/your-profile" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="https://github.com/danish-erhan02" target="_blank" rel="noopener">GitHub</a>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Danish Erhan. All rights reserved.</span>
+      <span>Built with HTML &amp; CSS.</span>
+    </div>
+  </footer>
 
   <script>
-    // Animated energy-grid background: drifting nodes with connecting lines
+    // Solid nav on scroll
+    const nav = document.getElementById('topnav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('solid', window.scrollY > 40);
+    });
+
+    // Animated energy-grid background (behind non-hero sections)
     const canvas = document.getElementById('grid');
     const ctx = canvas.getContext('2d');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -403,8 +482,7 @@
     function step() {
       ctx.clearRect(0, 0, w, h);
       for (const n of nodes) {
-        n.x += n.vx;
-        n.y += n.vy;
+        n.x += n.vx; n.y += n.vy;
         if (n.x < 0 || n.x > w) n.vx *= -1;
         if (n.y < 0 || n.y > h) n.vy *= -1;
       }
@@ -436,28 +514,6 @@
     initNodes();
     step();
     window.addEventListener('resize', () => { resize(); initNodes(); if (reduceMotion) step(); });
-
-    // Sonar-style signal line under the header
-    (function animateSignal() {
-      const path = document.getElementById('signal-path');
-      if (reduceMotion) {
-        path.setAttribute('d', 'M0,23 L120,23 L140,8 L160,38 L180,23 L700,23');
-        return;
-      }
-      let t = 0;
-      function draw() {
-        t += 0.04;
-        let d = 'M0,23 ';
-        for (let x = 0; x <= 700; x += 14) {
-          const bump = Math.max(0, Math.sin((x * 0.02) - t) ) * Math.exp(-Math.pow((x - 200 - (t * 40) % 900) / 60, 2));
-          const y = 23 - bump * 18;
-          d += `L${x},${y.toFixed(1)} `;
-        }
-        path.setAttribute('d', d);
-        requestAnimationFrame(draw);
-      }
-      draw();
-    })();
   </script>
 
 </body>

@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Danish Erhan — Naval Architecture and Marine Engineering graduate, combining offshore engineering with AI-driven simulations and web technologies.">
 <title>Danish Erhan | Portfolio</title>
+<link rel="preload" as="image" href="images/profile.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #060a10;
@@ -732,7 +734,7 @@
       </div>
     </div>
     <div class="hero-photo-half">
-      <img src="images/profile.jpg" alt="Danish Erhan">
+      <img src="images/profile.jpg" alt="Danish Erhan" width="900" height="1200" decoding="async" fetchpriority="high">
     </div>
     <div class="scroll-cue">Scroll</div>
   </section>
@@ -900,14 +902,21 @@
   </div>
 
   <script>
-    // Solid nav on scroll
+    // Solid nav on scroll (rAF-throttled, passive)
     const nav = document.getElementById('topnav');
+    let navTicking = false;
     window.addEventListener('scroll', () => {
-      nav.classList.toggle('solid', window.scrollY > 40);
-    });
+      if (navTicking) return;
+      navTicking = true;
+      requestAnimationFrame(() => {
+        nav.classList.toggle('solid', window.scrollY > 40);
+        navTicking = false;
+      });
+    }, { passive: true });
 
     // Drifting dust particles (Brownian motion) inside each neon page
     const reduceMotionDust = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let gridAnim = null;
 
     function setupDust(canvas) {
       if (!canvas) return null;
@@ -1021,6 +1030,7 @@
       document.body.style.overflow = 'hidden';
       el.querySelector('.page-close').focus();
       if (dustControllers[key]) dustControllers[key].start();
+      if (gridAnim) gridAnim.stop();
     }
 
     function closePage(key) {
@@ -1030,6 +1040,7 @@
       el.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
       if (dustControllers[key]) dustControllers[key].stop();
+      if (gridAnim) gridAnim.start();
     }
 
     document.querySelectorAll('.tab-btn[data-page]').forEach(btn => {
@@ -1048,6 +1059,8 @@
     const ctx = canvas.getContext('2d');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let w, h, nodes;
+    let gridRunning = false;
+    let gridRaf = null;
 
     function resize() {
       w = canvas.width = window.innerWidth;
@@ -1055,7 +1068,7 @@
     }
 
     function initNodes() {
-      const count = Math.min(70, Math.floor((w * h) / 22000));
+      const count = Math.min(55, Math.floor((w * h) / 26000));
       nodes = Array.from({ length: count }, () => ({
         x: Math.random() * w,
         y: Math.random() * h,
@@ -1071,14 +1084,18 @@
         if (n.x < 0 || n.x > w) n.vx *= -1;
         if (n.y < 0 || n.y > h) n.vy *= -1;
       }
+      ctx.lineWidth = 1;
+      const maxDist = 140;
+      const maxDistSq = maxDist * maxDist;
       for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i];
         for (let j = i + 1; j < nodes.length; j++) {
-          const a = nodes[i], b = nodes[j];
+          const b = nodes[j];
           const dx = a.x - b.x, dy = a.y - b.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 140) {
-            ctx.strokeStyle = `rgba(62, 230, 196, ${0.14 * (1 - dist / 140)})`;
-            ctx.lineWidth = 1;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < maxDistSq) {
+            const dist = Math.sqrt(distSq);
+            ctx.strokeStyle = `rgba(62, 230, 196, ${0.14 * (1 - dist / maxDist)})`;
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
             ctx.lineTo(b.x, b.y);
@@ -1086,19 +1103,32 @@
           }
         }
       }
+      ctx.fillStyle = 'rgba(62, 230, 196, 0.55)';
       for (const n of nodes) {
-        ctx.fillStyle = 'rgba(62, 230, 196, 0.55)';
         ctx.beginPath();
         ctx.arc(n.x, n.y, 1.6, 0, Math.PI * 2);
         ctx.fill();
       }
-      if (!reduceMotion) requestAnimationFrame(step);
+      if (gridRunning && !reduceMotion) gridRaf = requestAnimationFrame(step);
     }
+
+    gridAnim = {
+      start() {
+        if (gridRunning || reduceMotion) return;
+        gridRunning = true;
+        step();
+      },
+      stop() {
+        gridRunning = false;
+        if (gridRaf) cancelAnimationFrame(gridRaf);
+      }
+    };
 
     resize();
     initNodes();
     step();
-    window.addEventListener('resize', () => { resize(); initNodes(); if (reduceMotion) step(); });
+    gridAnim.start();
+    window.addEventListener('resize', () => { resize(); initNodes(); if (!gridRunning) step(); });
   </script>
 
 </body>

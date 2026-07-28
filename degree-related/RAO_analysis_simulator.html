@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Barge RAO model</title>
+<style>
+  :root{
+    --ink:#10293a; --ink2:#33546a; --paper:#eef3f5; --panel:#ffffff;
+    --line:#c9d7de; --line2:#dde7ec;
+    --sea:#2f6f9f; --sea-soft:#dbe9f2;
+    --heave:#0e7c86; --pitch:#7a5cc0; --roll:#c77f1a;
+    --accent:#0e7c86; --danger:#b8452e;
+    --mono:"SFMono-Regular",ui-monospace,"Roboto Mono",Menlo,Consolas,monospace;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+    line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1060px;margin:0 auto;padding:28px 22px 60px;}
+  header.top{border-bottom:1.5px solid var(--ink);padding-bottom:14px;margin-bottom:22px;
+    display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;}
+  .title-block h1{font-size:26px;font-weight:650;letter-spacing:-0.02em;margin:0;}
+  .title-block p{margin:4px 0 0;color:var(--ink2);font-size:14px;max-width:60ch;}
+  header.top{border-color:var(--ink);}
+  .theme-select{display:flex;flex-direction:column;gap:6px;}
+  .theme-label{font-family:var(--mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink2);}
+  .theme-btns{display:flex;gap:5px;border:1px solid var(--line);border-radius:8px;padding:3px;background:var(--panel);}
+  .th-btn{border:none;background:transparent;color:var(--ink2);font-family:var(--sans);font-size:12.5px;
+    font-weight:550;padding:6px 11px;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .th-btn:hover{color:var(--ink);}
+  .th-btn.active{background:var(--accent);color:#fff;}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 6px;}
+  .layout{display:grid;grid-template-columns:300px 1fr;gap:20px;}
+  @media(max-width:820px){.layout{grid-template-columns:1fr;}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;}
+  .panel h2{font-size:12px;font-family:var(--mono);letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--ink2);margin:0 0 14px;font-weight:600;}
+  .modes{display:flex;gap:6px;margin-bottom:20px;}
+  .mode-btn{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--ink2);
+    font-family:var(--sans);font-size:13px;font-weight:550;padding:9px 4px;border-radius:7px;
+    cursor:pointer;transition:all .15s;}
+  .mode-btn:hover{border-color:var(--ink2);}
+  .mode-btn.active{color:#fff;border-color:transparent;}
+  .mode-btn.active[data-mode="heave"]{background:var(--heave);}
+  .mode-btn.active[data-mode="pitch"]{background:var(--pitch);}
+  .mode-btn.active[data-mode="roll"]{background:var(--roll);}
+  .ctrl{margin-bottom:16px;}
+  .ctrl-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+  .ctrl-row label{font-size:13px;color:var(--ink2);font-weight:500;}
+  .ctrl-row .val{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink);}
+  input[type=range]{width:100%;height:4px;-webkit-appearance:none;appearance:none;
+    background:var(--line);border-radius:2px;outline:none;margin:6px 0 2px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+    border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--line);}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--accent);
+    cursor:pointer;border:2px solid #fff;}
+  .hint{font-size:11.5px;color:var(--ink2);opacity:.8;margin-top:3px;}
+  .plot-panel{position:relative;}
+  #plot{width:100%;height:360px;display:block;touch-action:none;cursor:crosshair;}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;}
+  @media(max-width:520px){.cards{grid-template-columns:1fr;}}
+  .card{background:var(--paper);border-radius:8px;padding:12px 14px;}
+  .card .k{font-size:11px;font-family:var(--mono);letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--ink2);margin-bottom:4px;}
+  .card .v{font-size:22px;font-weight:600;letter-spacing:-0.01em;}
+  .card .u{font-size:12px;color:var(--ink2);font-weight:400;margin-left:3px;}
+  .anim-panel{margin-top:20px;}
+  .anim-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;}
+  #stage{width:100%;height:210px;display:block;background:linear-gradient(#f2f8fc 0%,#f2f8fc 46%,#e4eff7 46%,#e4eff7 100%);
+    border-radius:8px;}
+  .legend-note{font-size:12px;color:var(--ink2);margin-top:8px;}
+  footer{margin-top:26px;font-size:11.5px;color:var(--ink2);border-top:1px solid var(--line);padding-top:14px;}
+  .watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-28deg);
+    font-size:clamp(46px,11vw,132px);font-weight:700;letter-spacing:0.04em;color:var(--ink);
+    opacity:0.055;pointer-events:none;user-select:none;white-space:nowrap;z-index:0;}
+  .wrap{position:relative;z-index:1;}
+  .wm-credit{font-family:var(--mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--ink2);opacity:.75;margin-top:10px;}
+  .foot-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px;}
+  @media(max-width:520px){.foot-grid{grid-template-columns:1fr;}}
+  code{font-family:var(--mono);font-size:11.5px;background:var(--sea-soft);padding:1px 4px;border-radius:3px;color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="watermark" aria-hidden="true">Danish Erhan</div>
+<div class="wrap">
+  <header class="top">
+    <div class="title-block">
+      <p class="eyebrow">Seakeeping · response amplitude operator</p>
+      <h1>Barge RAO model</h1>
+      <p>Set the barge's dimensions and watch how its motion response changes with wave frequency. Coefficients are estimated from a rectangular-box strip-theory approximation — good for intuition, not for class approval.</p>
+    </div>
+    <div class="theme-select">
+      <span class="theme-label">Theme</span>
+      <div class="theme-btns">
+        <button class="th-btn active" data-theme="harbor">Harbor</button>
+        <button class="th-btn" data-theme="night">Night watch</button>
+        <button class="th-btn" data-theme="blueprint">Blueprint</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- CONTROLS -->
+    <div class="panel">
+      <h2>Motion</h2>
+      <div class="modes">
+        <button class="mode-btn active" data-mode="heave">Heave</button>
+        <button class="mode-btn" data-mode="pitch">Pitch</button>
+        <button class="mode-btn" data-mode="roll">Roll</button>
+      </div>
+
+      <h2>Barge dimensions</h2>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Length&nbsp;L</label><span class="val" id="Lval">80 m</span></div>
+        <input type="range" id="L" min="30" max="180" step="2" value="80">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Beam&nbsp;B</label><span class="val" id="Bval">20 m</span></div>
+        <input type="range" id="B" min="8" max="50" step="1" value="20">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Draft&nbsp;T</label><span class="val" id="Tval">4.0 m</span></div>
+        <input type="range" id="T" min="1.5" max="12" step="0.5" value="4">
+      </div>
+
+      <h2 style="margin-top:22px;">Damping ratio ζ</h2>
+      <div class="ctrl">
+        <div class="ctrl-row"><label id="zlabel">heave damping</label><span class="val" id="Zval">0.12</span></div>
+        <input type="range" id="Z" min="0.02" max="0.40" step="0.01" value="0.12">
+        <div class="hint">Roll is naturally lightly damped — try ζ ≈ 0.05 to see a sharp peak.</div>
+      </div>
+
+      <h2 style="margin-top:22px;">Wave frequency probe</h2>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>ω&nbsp;(drag on plot too)</label><span class="val" id="Wval">0.60</span></div>
+        <input type="range" id="W" min="0.05" max="3.0" step="0.01" value="0.6">
+        <div class="hint">Sets the frequency the barge below is riding, for a 1 m wave amplitude.</div>
+      </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div>
+      <div class="panel plot-panel">
+        <h2 id="plot-title">Heave RAO vs wave frequency</h2>
+        <canvas id="plot"></canvas>
+        <div class="cards">
+          <div class="card"><div class="k">Natural period</div><div class="v"><span id="Tn">—</span><span class="u">s</span></div></div>
+          <div class="card"><div class="k">Peak RAO</div><div class="v"><span id="peak">—</span><span class="u" id="peakU">m/m</span></div></div>
+          <div class="card"><div class="k">RAO at probe</div><div class="v"><span id="raoNow">—</span><span class="u" id="nowU">m/m</span></div></div>
+        </div>
+      </div>
+
+      <div class="panel anim-panel">
+        <div class="anim-head">
+          <h2 style="margin:0;">Response at the probe frequency</h2>
+          <span class="val" id="respLabel" style="font-size:13px;"></span>
+        </div>
+        <canvas id="stage"></canvas>
+        <div class="legend-note" id="animNote">Wave speed and length now follow the probe frequency (compressed to a viewable range); amplitude is the response to a 1 m wave.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="foot-grid">
+      <div><strong>How the curves are built.</strong> Each mode is a forced mass–spring–damper: <code>RAO = E(ω)·C/√[(C−I·ω²)²+(Bω)²]</code>, where <code>E(ω)=e^(−kT)·|sinc|</code> is the wave pressure &amp; length averaging. Restoring <code>C</code>, virtual inertia <code>I</code>, and damping <code>B</code> come from box geometry.</div>
+      <div><strong>Why the wiggles.</strong> The <code>|sinc(kL/2)|</code> (heave/pitch) and <code>|sinc(kB/2)|</code> (roll) terms create cancellation dips where wave crests and troughs balance along the hull — a real effect for box-shaped hulls.</div>
+    </div>
+    <div class="wm-credit">Prepared by Danish Erhan</div>
+  </footer>
+</div>
+
+<script>
+"use strict";
+const RHO=1025, G=9.81;
+const state={mode:"heave", L:80, B:20, T:4, zeta:0.12, w:0.60};
+const zetaDefaults={heave:0.12, pitch:0.10, roll:0.05};
+const THEMES={
+  harbor:{
+    css:{"--ink":"#10293a","--ink2":"#33546a","--paper":"#eef3f5","--panel":"#ffffff",
+      "--line":"#c9d7de","--line2":"#dde7ec","--sea":"#2f6f9f","--sea-soft":"#dbe9f2",
+      "--heave":"#0e7c86","--pitch":"#7a5cc0","--roll":"#c77f1a"},
+    modes:{heave:"#0e7c86",pitch:"#7a5cc0",roll:"#c77f1a"},
+    plot:{grid:"#e6eef2",gridSoft:"#eef4f7",tick:"#7a94a3",axis:"#33546a",wn:"#b6c6cf",wnText:"#8aa2b0",ring:"#ffffff"},
+    stage:{bgTop:"#f2f8fc",bgBot:"#e4eff7",seaFill:"#cfe4f2",seaStroke:"#2f6f9f",hull:"#2c3e4a",deck:"#5d7280",sup:"#41586a"}
+  },
+  night:{
+    css:{"--ink":"#e8f0f4","--ink2":"#93aab8","--paper":"#0e1a23","--panel":"#17262f",
+      "--line":"#2b3d49","--line2":"#223039","--sea":"#4a8fc0","--sea-soft":"#1d3040",
+      "--heave":"#2bb3bd","--pitch":"#a98ce6","--roll":"#e6a53d"},
+    modes:{heave:"#2bb3bd",pitch:"#a98ce6",roll:"#e6a53d"},
+    plot:{grid:"#22323d",gridSoft:"#1b2932",tick:"#7d95a3",axis:"#a9c0cd",wn:"#3a5160",wnText:"#6f8a99",ring:"#17262f"},
+    stage:{bgTop:"#12222d",bgBot:"#0b161e",seaFill:"#16384d",seaStroke:"#4a8fc0",hull:"#20323f",deck:"#4a6577",sup:"#35505f"}
+  },
+  blueprint:{
+    css:{"--ink":"#dbeaf5","--ink2":"#7fa8cc","--paper":"#0c2745","--panel":"#103057",
+      "--line":"#1f4a7a","--line2":"#16385f","--sea":"#3f7fb8","--sea-soft":"#123a63",
+      "--heave":"#56c7d6","--pitch":"#9db8e8","--roll":"#f0c05a"},
+    modes:{heave:"#56c7d6",pitch:"#9db8e8",roll:"#f0c05a"},
+    plot:{grid:"#17406b",gridSoft:"#123458",tick:"#6f9ac2",axis:"#a9c6e0",wn:"#2a5786",wnText:"#6f9ac2",ring:"#103057"},
+    stage:{bgTop:"#10315a",bgBot:"#0a2340",seaFill:"#143f6e",seaStroke:"#4a86bd",hull:"#0a1f38",deck:"#3f6a99",sup:"#2f5a86"}
+  }
+};
+let TH=THEMES.harbor;
+let modeColor=THEMES.harbor.modes;
+function applyTheme(name){
+  TH=THEMES[name]; modeColor=TH.modes;
+  for(const [k,v] of Object.entries(TH.css)) document.documentElement.style.setProperty(k,v);
+  document.documentElement.style.setProperty("--accent",modeColor[state.mode]);
+  stage.style.background=`linear-gradient(${TH.stage.bgTop} 0%,${TH.stage.bgTop} 46%,${TH.stage.bgBot} 46%,${TH.stage.bgBot} 100%)`;
+  refresh();
+}
+
+function sinc(x){ return Math.abs(x)<1e-9 ? 1 : Math.abs(Math.sin(x)/x); }
+function hypot(a,b){ return Math.sqrt(a*a+b*b); }
+
+// Returns coefficients for the selected mode.
+function coeffs(mode,L,B,T){
+  const V=L*B*T, M=RHO*V;
+  if(mode==="heave"){
+    const A=RHO*(Math.PI/8)*B*B*L;        // heave added mass (flat-plate approx)
+    const C=RHO*G*L*B;                     // hydrostatic restoring = rho g Awp
+    return {I:M+A, C, span:L, rot:false};
+  }
+  if(mode==="pitch"){
+    const I0=M*(L*L/12);                   // mass pitch inertia (uniform box)
+    const A=RHO*(Math.PI/8)*B*B*(L*L*L/12);// added pitch inertia
+    const C=RHO*G*(B*L*L*L/12);            // rho g I_L(waterplane)
+    return {I:I0+A, C, span:L, rot:true};
+  }
+  // roll
+  const kxx=0.40*B, I0=M*kxx*kxx, A=0.25*I0;
+  const BM=B*B/(12*T), BG=0.3*T, GM=Math.max(0.3, BM-BG);
+  const C=RHO*G*V*GM;
+  return {I:I0+A, C, span:B, rot:true, GM};
+}
+
+// RAO value at a given omega for the current mode. Heave: m/m. Pitch/roll: deg per metre.
+function raoAt(w){
+  const c=coeffs(state.mode,state.L,state.B,state.T);
+  const k=w*w/G;
+  const E=Math.exp(-k*state.T)*sinc(k*c.span/2);
+  const Bd=2*state.zeta*Math.sqrt(c.I*c.C);
+  const denom=hypot(c.C - c.I*w*w, Bd*w);
+  const Gmag=c.C/denom;                    // dynamic magnification, ->1 at low w
+  if(state.mode==="heave") return E*Gmag;           // m/m
+  return (k*E*Gmag)*(180/Math.PI);         // deg/m  (wave-slope scaled)
+}
+
+function naturalOmega(){
+  const c=coeffs(state.mode,state.L,state.B,state.T);
+  return Math.sqrt(c.C/c.I);
+}
+
+// ---- Plot ----
+const plot=document.getElementById("plot");
+const pctx=plot.getContext("2d");
+let plotBox=null;
+
+function xmax(){
+  const wn=naturalOmega();
+  return Math.min(3.5, Math.max(2.0, 1.7*wn));
+}
+
+function drawPlot(){
+  const dpr=window.devicePixelRatio||1;
+  const cssW=plot.clientWidth, cssH=plot.clientHeight;
+  plot.width=cssW*dpr; plot.height=cssH*dpr;
+  pctx.setTransform(dpr,0,0,dpr,0,0);
+  pctx.clearRect(0,0,cssW,cssH);
+
+  const m={l:52,r:16,t:14,b:38};
+  const W=cssW-m.l-m.r, H=cssH-m.t-m.b;
+  plotBox={x:m.l,y:m.t,w:W,h:H};
+  const xM=xmax();
+
+  // sample
+  const N=280, xs=[], ys=[]; let yMax=0;
+  for(let i=0;i<=N;i++){
+    const w=0.02 + (xM-0.02)*i/N;
+    const y=raoAt(w);
+    xs.push(w); ys.push(y);
+    if(isFinite(y)&&y>yMax) yMax=y;
+  }
+  yMax=Math.max(yMax*1.12, state.mode==="heave"?1.4:0.5);
+
+  const px=w=> m.l + (w/xM)*W;
+  const py=v=> m.t + H - (v/yMax)*H;
+
+  // grid
+  pctx.strokeStyle=TH.plot.grid; pctx.lineWidth=1;
+  pctx.fillStyle=TH.plot.tick; pctx.font="11px "+getComputedStyle(document.body).fontFamily;
+  const yTicks=5;
+  for(let i=0;i<=yTicks;i++){
+    const v=yMax*i/yTicks, y=py(v);
+    pctx.beginPath(); pctx.moveTo(m.l,y); pctx.lineTo(m.l+W,y); pctx.stroke();
+    pctx.textAlign="right"; pctx.textBaseline="middle";
+    pctx.fillText(v.toFixed(state.mode==="heave"?2:1), m.l-8, y);
+  }
+  const xTicks=6;
+  for(let i=0;i<=xTicks;i++){
+    const w=xM*i/xTicks, x=px(w);
+    pctx.beginPath(); pctx.moveTo(x,m.t); pctx.lineTo(x,m.t+H); pctx.strokeStyle=TH.plot.gridSoft; pctx.stroke();
+    pctx.textAlign="center"; pctx.textBaseline="top"; pctx.fillStyle=TH.plot.tick;
+    pctx.fillText(w.toFixed(1), x, m.t+H+7);
+  }
+  // axis labels
+  pctx.save();
+  pctx.fillStyle=TH.plot.axis; pctx.font="12px "+getComputedStyle(document.body).fontFamily;
+  pctx.textAlign="center"; pctx.textBaseline="top";
+  pctx.fillText("wave frequency  ω  (rad/s)", m.l+W/2, m.t+H+21);
+  pctx.translate(13, m.t+H/2); pctx.rotate(-Math.PI/2); pctx.textBaseline="bottom";
+  pctx.fillText(state.mode==="heave"?"heave RAO  (m/m)":(state.mode+" RAO  (deg/m)"),0,0);
+  pctx.restore();
+
+  // canvas watermark
+  pctx.save();
+  pctx.globalAlpha=0.10; pctx.fillStyle=TH.plot.axis;
+  pctx.font="600 30px "+getComputedStyle(document.body).fontFamily;
+  pctx.textAlign="center"; pctx.textBaseline="middle";
+  pctx.translate(m.l+W/2, m.t+H/2); pctx.rotate(-0.20);
+  pctx.fillText("Danish Erhan",0,0);
+  pctx.restore();
+
+  // natural frequency marker
+  const wn=naturalOmega();
+  if(wn<xM){
+    pctx.strokeStyle=TH.plot.wn; pctx.setLineDash([4,4]); pctx.lineWidth=1;
+    pctx.beginPath(); pctx.moveTo(px(wn),m.t); pctx.lineTo(px(wn),m.t+H); pctx.stroke();
+    pctx.setLineDash([]);
+    pctx.fillStyle=TH.plot.wnText; pctx.font="10.5px "+getComputedStyle(document.body).fontFamily;
+    pctx.textAlign="left"; pctx.textBaseline="top";
+    pctx.fillText("ωₙ", px(wn)+4, m.t+3);
+  }
+
+  // curve
+  const col=modeColor[state.mode];
+  pctx.beginPath();
+  for(let i=0;i<xs.length;i++){ const x=px(xs[i]),y=py(Math.min(ys[i],yMax));
+    i?pctx.lineTo(x,y):pctx.moveTo(x,y);}
+  pctx.strokeStyle=col; pctx.lineWidth=2.4; pctx.lineJoin="round"; pctx.stroke();
+  // fill under
+  pctx.lineTo(px(xs[xs.length-1]),py(0)); pctx.lineTo(px(xs[0]),py(0)); pctx.closePath();
+  pctx.fillStyle=col+"18"; pctx.fill();
+
+  // probe marker
+  const wv=state.w, yv=raoAt(wv);
+  if(wv<=xM){
+    pctx.strokeStyle=col; pctx.lineWidth=1.2;
+    pctx.beginPath(); pctx.moveTo(px(wv),m.t); pctx.lineTo(px(wv),m.t+H); pctx.stroke();
+    pctx.beginPath(); pctx.arc(px(wv),py(Math.min(yv,yMax)),4.5,0,7); pctx.fillStyle=col; pctx.fill();
+    pctx.strokeStyle=TH.plot.ring; pctx.lineWidth=1.5; pctx.stroke();
+  }
+  return {yMax};
+}
+
+// ---- readouts ----
+function peakInfo(){
+  const xM=xmax(); let best=0,bw=0;
+  for(let i=0;i<=400;i++){ const w=0.02+(xM-0.02)*i/400; const y=raoAt(w);
+    if(y>best){best=y;bw=w;} }
+  return {peak:best, w:bw};
+}
+function updateReadouts(){
+  const wn=naturalOmega();
+  document.getElementById("Tn").textContent=(2*Math.PI/wn).toFixed(1);
+  const pk=peakInfo(), unit=state.mode==="heave"?"m/m":"deg/m";
+  document.getElementById("peak").textContent=pk.peak.toFixed(state.mode==="heave"?2:1);
+  document.getElementById("peakU").textContent=unit;
+  document.getElementById("nowU").textContent=unit;
+  const now=raoAt(state.w);
+  document.getElementById("raoNow").textContent=now.toFixed(state.mode==="heave"?2:1);
+}
+
+// ---- animation stage ----
+const stage=document.getElementById("stage");
+const sctx=stage.getContext("2d");
+let lastT=performance.now(), phaseAccum=0;
+
+function drawStage(now){
+  const dpr=window.devicePixelRatio||1;
+  const cssW=stage.clientWidth, cssH=stage.clientHeight;
+  if(stage.width!==cssW*dpr||stage.height!==cssH*dpr){stage.width=cssW*dpr;stage.height=cssH*dpr;}
+  sctx.setTransform(dpr,0,0,dpr,0,0);
+  sctx.clearRect(0,0,cssW,cssH);
+
+  const rest=cssH*0.46;                  // calm waterline
+  const dt=Math.min(0.05,(now-lastT)/1000); lastT=now;
+  // visual angular rate tracks the probe frequency (compressed to a watchable band)
+  const visW=Math.min(9.0, Math.max(0.6, state.w*4.0));
+  phaseAccum += visW*dt;
+  const phase=phaseAccum;
+  // shorter waves at higher frequency, like real deep-water waves
+  const waveLenPx=Math.min(260, Math.max(48, 80/state.w));
+
+  // response magnitude for a 1 m wave amplitude
+  const val=raoAt(state.w);
+  let heaveM=0, angDeg=0;
+  if(state.mode==="heave") heaveM=val*1.0;         // metres
+  else angDeg=Math.min(val*1.0, 26);               // deg, clamped for view
+
+  // sea surface (front-running wave)
+  sctx.beginPath();
+  const waveAmpPx=8;
+  for(let x=0;x<=cssW;x+=6){
+    const y=rest + waveAmpPx*Math.sin((x/waveLenPx)*2*Math.PI - phase);
+    x?sctx.lineTo(x,y):sctx.moveTo(x,y);
+  }
+  sctx.lineTo(cssW,cssH); sctx.lineTo(0,cssH); sctx.closePath();
+  sctx.fillStyle=TH.stage.seaFill; sctx.fill();
+  sctx.beginPath();
+  for(let x=0;x<=cssW;x+=6){
+    const y=rest + waveAmpPx*Math.sin((x/waveLenPx)*2*Math.PI - phase);
+    x?sctx.lineTo(x,y):sctx.moveTo(x,y);
+  }
+  sctx.strokeStyle=TH.stage.seaStroke; sctx.lineWidth=1.5; sctx.stroke();
+
+  // barge geometry (front view for roll, side view otherwise)
+  const cx=cssW/2;
+  const front = state.mode==="roll";
+  const beamPx = front ? Math.min(state.B*4.4,190) : Math.min(state.L*1.7,300);
+  const draftScale = 4.4;
+  const draftPx = Math.min(state.T*draftScale, 34);
+  const freeboardPx = draftPx*0.75;
+  const hullH = draftPx+freeboardPx;
+
+  // vertical position (heave) — oscillate about rest
+  const pxPerM=7;
+  const heaveOsc = state.mode==="heave" ? heaveM*Math.sin(phase)*pxPerM : 0;
+  const cy = rest - freeboardPx + heaveOsc;   // top of hull sits above waterline
+
+  const angle = (state.mode!=="heave") ? (angDeg*Math.PI/180)*Math.sin(phase) : 0;
+
+  sctx.save();
+  sctx.translate(cx, cy + hullH/2);           // rotate about hull centre
+  sctx.rotate(angle);
+  // hull
+  const col=modeColor[state.mode];
+  roundRect(sctx, -beamPx/2, -hullH/2, beamPx, hullH, 5);
+  sctx.fillStyle=TH.stage.hull; sctx.fill();
+  // waterline stripe on hull
+  sctx.fillStyle=col;
+  sctx.fillRect(-beamPx/2, -hullH/2+freeboardPx-3, beamPx, 4);
+  // deck line
+  sctx.strokeStyle=TH.stage.deck; sctx.lineWidth=1;
+  sctx.beginPath(); sctx.moveTo(-beamPx/2+4,-hullH/2+5); sctx.lineTo(beamPx/2-4,-hullH/2+5); sctx.stroke();
+  // small superstructure to make rotation legible
+  const sw=beamPx*0.22, sh=12;
+  roundRect(sctx, -sw/2, -hullH/2-sh, sw, sh, 2);
+  sctx.fillStyle=TH.stage.sup; sctx.fill();
+  sctx.restore();
+
+  requestAnimationFrame(drawStage);
+}
+function roundRect(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath();
+}
+
+// ---- respond label ----
+function updateRespLabel(){
+  const val=raoAt(state.w);
+  const el=document.getElementById("respLabel");
+  if(state.mode==="heave") el.textContent="≈ "+val.toFixed(2)+" m heave per 1 m wave";
+  else el.textContent="≈ "+val.toFixed(1)+"° "+state.mode+" per 1 m wave";
+}
+
+// ---- full refresh ----
+function refresh(){
+  drawPlot(); updateReadouts(); updateRespLabel();
+  document.getElementById("plot-title").textContent=
+    state.mode.charAt(0).toUpperCase()+state.mode.slice(1)+" RAO vs wave frequency";
+}
+
+// ---- events ----
+document.querySelectorAll(".mode-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".mode-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    state.mode=btn.dataset.mode;
+    state.zeta=zetaDefaults[state.mode];
+    document.getElementById("Z").value=state.zeta;
+    document.getElementById("Zval").textContent=state.zeta.toFixed(2);
+    document.getElementById("zlabel").textContent=state.mode+" damping";
+    document.documentElement.style.setProperty("--accent",modeColor[state.mode]);
+    refresh();
+  });
+});
+document.getElementById("L").addEventListener("input",e=>{state.L=+e.target.value;document.getElementById("Lval").textContent=state.L+" m";refresh();});
+document.getElementById("B").addEventListener("input",e=>{state.B=+e.target.value;document.getElementById("Bval").textContent=state.B+" m";refresh();});
+document.getElementById("T").addEventListener("input",e=>{state.T=+e.target.value;document.getElementById("Tval").textContent=state.T.toFixed(1)+" m";refresh();});
+document.getElementById("Z").addEventListener("input",e=>{state.zeta=+e.target.value;document.getElementById("Zval").textContent=state.zeta.toFixed(2);refresh();});
+document.getElementById("W").addEventListener("input",e=>{state.w=+e.target.value;document.getElementById("Wval").textContent=state.w.toFixed(2);refresh();});
+
+// drag on plot to set probe frequency
+function plotToOmega(clientX){
+  if(!plotBox) return state.w;
+  const rect=plot.getBoundingClientRect();
+  const x=clientX-rect.left;
+  const frac=Math.min(1,Math.max(0,(x-plotBox.x)/plotBox.w));
+  return +(0.05+frac*(xmax()-0.05)).toFixed(2);
+}
+let dragging=false;
+function setProbe(clientX){
+  const w=plotToOmega(clientX);
+  state.w=Math.min(3.0,Math.max(0.05,w));
+  document.getElementById("W").value=state.w;
+  document.getElementById("Wval").textContent=state.w.toFixed(2);
+  refresh();
+}
+plot.addEventListener("pointerdown",e=>{dragging=true;plot.setPointerCapture(e.pointerId);setProbe(e.clientX);});
+plot.addEventListener("pointermove",e=>{if(dragging)setProbe(e.clientX);});
+plot.addEventListener("pointerup",()=>dragging=false);
+
+window.addEventListener("resize",()=>drawPlot());
+
+// theme buttons
+document.querySelectorAll(".th-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".th-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    applyTheme(btn.dataset.theme);
+  });
+});
+
+// init
+applyTheme("harbor");
+requestAnimationFrame(drawStage);
+</script>
+</body>
+</html>

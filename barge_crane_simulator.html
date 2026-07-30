@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Barge added weight heel simulator</title>
+<style>
+  :root{--bg:#f6f5f0;--card:#fff;--ink:#2c2c2a;--muted:#5f5e5a;--line:#d9d7cd;
+        --ok-bg:#e1f5ee;--ok:#0f6e56;--warn-bg:#faeeda;--warn:#854f0b;--bad-bg:#fcebeb;--bad:#a32d2d;}
+  @media(prefers-color-scheme:dark){:root{--bg:#1d1c1a;--card:#282723;--ink:#e8e6dd;--muted:#a3a199;--line:#3c3b37;
+        --ok-bg:#0c3a2f;--ok:#5dcaa5;--warn-bg:#3a2a10;--warn:#f0b45a;--bad-bg:#3a1414;--bad:#f09595;}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px}
+  .wrap{max-width:1140px;margin:0 auto;display:grid;gap:16px}
+  h1{font-size:22px;font-weight:500;margin:0}
+  p.sub{margin:0;color:var(--muted);font-size:14px}
+  .main{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start}
+  @media(max-width:840px){.main{grid-template-columns:1fr}}
+  .left{display:grid;gap:12px}
+  canvas{width:100%;height:440px;display:block;border-radius:12px;border:.5px solid var(--line);background:var(--card)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+  .card{background:var(--card);border:.5px solid var(--line);border-radius:10px;padding:10px 12px}
+  .card .k{font-size:13px;color:var(--muted)}
+  .card .v{font-size:22px;font-weight:500}
+  #status{font-size:14px;font-weight:500;padding:10px 12px;border-radius:10px}
+  .right{background:var(--card);border:.5px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:14px;position:sticky;top:24px}
+  .sec-h{font-size:13px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .divider{height:.5px;background:var(--line)}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .row label{font-size:14px;color:var(--muted)}
+  .row .num{display:flex;align-items:center;gap:5px}
+  .row .unit{font-size:13px;color:var(--muted);min-width:12px}
+  input[type=number]{width:78px;padding:6px 8px;font:inherit;font-size:14px;text-align:right;border:.5px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+  input[type=number]:focus{outline:none;border-color:var(--muted)}
+  input[type=number]:disabled{opacity:.5;cursor:not-allowed}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+  .grid2 .row .num input{width:66px}
+  .chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);cursor:pointer;user-select:none}
+  .chk input{width:16px;height:16px;accent-color:#1d9e75;cursor:pointer}
+  .tanks{display:grid;grid-template-columns:42px 1fr 1fr 1fr;gap:6px;align-items:center}
+  .tanks .hd{font-size:11px;color:var(--muted);text-align:center}
+  .tanks .rl{font-size:12px;color:var(--muted)}
+  .tanks input{width:100%;padding:5px 4px;text-align:center;font-size:13px}
+  .tanks input:focus{border-color:#1d9e75}
+  .cap{font-size:11px;color:var(--muted)}
+  button{border:.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:9px 14px;font:inherit;cursor:pointer;width:100%}
+  button:hover{border-color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div>
+    <h1>Barge added weight heel simulator</h1>
+    <p class="sub">Transverse cross-section with a starboard crane. The ballast space is split into 6 tanks — 3 upper, 3 lower — with breadth and height divided equally. Buoyancy equals displaced seawater; the barge heels until the centre of buoyancy (B) sits under the centre of gravity (G).</p>
+  </div>
+
+  <div class="main">
+    <div class="left">
+      <canvas id="cv"></canvas>
+      <div class="cards">
+        <div class="card"><div class="k">Heel angle</div><div class="v" id="mHeel">0°</div></div>
+        <div class="card"><div class="k">Mean draft</div><div class="v" id="mDraft">0.0 m</div></div>
+        <div class="card"><div class="k">Low freeboard</div><div class="v" id="mFree">0.0 m</div></div>
+        <div class="card"><div class="k">GM (stability)</div><div class="v" id="mGM">0.0 m</div></div>
+      </div>
+      <div id="status"></div>
+    </div>
+
+    <div class="right">
+      <p class="sec-h">Crane</p>
+      <div class="row"><label for="loadN">Load on hook</label><span class="num"><input type="number" id="loadN" step="5" value="150"><span class="unit">t</span></span></div>
+      <div class="row"><label for="reachN">Boom reach</label><span class="num"><input type="number" id="reachN" step="0.5" value="9"><span class="unit">m</span></span></div>
+
+      <div class="divider"></div>
+      <p class="sec-h">Ballast tanks <span class="cap" id="capNote"></span></p>
+      <label class="chk"><input type="checkbox" id="autoChk"> Auto-ballast to counter crane load</label>
+      <div class="tanks" id="tanks"></div>
+
+      <div class="divider"></div>
+      <p class="sec-h">Barge particulars</p>
+      <div class="grid2">
+        <div class="row"><label for="pL">Length</label><span class="num"><input type="number" id="pL" step="1" value="60"><span class="unit">m</span></span></div>
+        <div class="row"><label for="pB">Beam</label><span class="num"><input type="number" id="pB" step="0.5" value="14"><span class="unit">m</span></span></div>
+        <div class="row"><label for="pH">Depth</label><span class="num"><input type="number" id="pH" step="0.5" value="4"><span class="unit">m</span></span></div>
+        <div class="row"><label for="pMB">Lightship</label><span class="num"><input type="number" id="pMB" step="10" value="620"><span class="unit">t</span></span></div>
+        <div class="row"><label for="pKG">Ship KG</label><span class="num"><input type="number" id="pKG" step="0.1" value="1.9"><span class="unit">m</span></span></div>
+        <div class="row"><label for="cMass">Crane wt</label><span class="num"><input type="number" id="cMass" step="5" value="85"><span class="unit">t</span></span></div>
+        <div class="row"><label for="cOff">Crane off</label><span class="num"><input type="number" id="cOff" step="0.5" value="5"><span class="unit">m</span></span></div>
+        <div class="row"><label for="cKG">Crane KG</label><span class="num"><input type="number" id="cKG" step="0.5" value="6.5"><span class="unit">m</span></span></div>
+      </div>
+
+      <button id="reset">Reset all</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+  const RHO=1.025;
+  let L=60,B=14,H=4,M_BARGE=620,KG_BARGE=1.9,M_CRANE=85,X_CRANE=5.0,KG_CRANE=6.5;
+  let load=150,reach=9,ballast=new Array(6).fill(0),cur=0,tgt=0,S=42,autoOn=false;
+  const balH=()=>0.6*H, rowH=()=>balH()/2, colW=()=>B/3;
+  const colX=c=>-B/2+(c+0.5)*colW();
+  const rowBot=r=>-H/2+r*rowH();
+  const tankMax=()=>colW()*rowH()*L*RHO;
+  const fillFrac=i=>Math.min(ballast[i],tankMax())/tankMax();
+  const fillH=i=>fillFrac(i)*rowH();
+  const tankCGy=i=>rowBot(Math.floor(i/3))+fillH(i)/2;
+  const loadKG=()=>H+1.5;
+  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  const dark=()=>matchMedia('(prefers-color-scheme:dark)').matches;
+  const rot=(x,y,t)=>({x:x*Math.cos(t)+y*Math.sin(t),y:-x*Math.sin(t)+y*Math.cos(t)});
+  const corners=(t,yc)=>[[-B/2,-H/2],[B/2,-H/2],[B/2,H/2],[-B/2,H/2]].map(([x,y])=>{const r=rot(x,y,t);return{x:r.x,y:r.y+yc};});
+  function clip(p){const o=[];for(let i=0;i<p.length;i++){const A=p[i],C=p[(i+1)%p.length],ai=A.y<=0,ci=C.y<=0;if(ai)o.push(A);if(ai!==ci){const s=(0-A.y)/(C.y-A.y);o.push({x:A.x+s*(C.x-A.x),y:0});}}return o;}
+  function areaCent(p){let a=0,cx=0,cy=0;for(let i=0;i<p.length;i++){const A=p[i],C=p[(i+1)%p.length],cr=A.x*C.y-C.x*A.y;a+=cr;cx+=(A.x+C.x)*cr;cy+=(A.y+C.y)*cr;}if(Math.abs(a)<1e-9)return{A:0,cx:0,cy:0};return{A:Math.abs(a/2),cx:cx/(3*a),cy:cy/(3*a)};}
+
+  const ballastTotal=()=>ballast.reduce((s,b)=>s+Math.min(b,tankMax()),0);
+  const totalMass=()=>M_BARGE+M_CRANE+load+ballastTotal();
+  const totals=()=>{const m=totalMass();return{m,Areq:m/(RHO*L)};};
+  function bodyMasses(){const a=[[0,KG_BARGE-H/2,M_BARGE],[X_CRANE,KG_CRANE-H/2,M_CRANE]];
+    for(let i=0;i<6;i++){const m=Math.min(ballast[i],tankMax());if(m>0)a.push([colX(i%3),tankCGy(i),m]);}return a;}
+  function draft(t,Areq){let lo=-H*2.5,hi=H*2.5;for(let i=0;i<44;i++){const md=(lo+hi)/2;(areaCent(clip(corners(t,md))).A>Areq)?lo=md:hi=md;}const yc=(lo+hi)/2;return{yc,sub:areaCent(clip(corners(t,yc)))};}
+  function KGtot(){let mt=0,mk=0;for(const[x,y,m]of bodyMasses()){mt+=m;mk+=(y+H/2)*m;}mt+=load;mk+=load*loadKG();return mk/mt;}
+  function xG(t,yc){let mx=0,mt=0;for(const[x,y,m]of bodyMasses()){const r=rot(x,y,t);mx+=r.x*m;mt+=m;}const base=rot(X_CRANE,H/2,t);mx+=(base.x+reach)*load;mt+=load;return mx/mt;}
+  const residual=(t,Areq)=>{const d=draft(t,Areq);return d.sub.cx-xG(t,d.yc);};
+  function solveHeel(){const{Areq}=totals();if(Areq>=B*H)return{theta:cur,sink:true};let prev=-1.45,pv=residual(prev,Areq),best=0,found=false;for(let a=-1.40;a<=1.45;a+=0.035){const v=residual(a,Areq);if((pv<=0&&v>=0)||(pv>=0&&v<=0)){let lo=prev,hi=a;for(let i=0;i<26;i++){const m=(lo+hi)/2;((residual(m,Areq)>0)===(residual(lo,Areq)>0))?lo=m:hi=m;}const th=(lo+hi)/2;if(!found||Math.abs(th)<Math.abs(best)){best=th;found=true;}}prev=a;pv=v;}return{theta:best,sink:false};}
+  function metrics(t){const{Areq}=totals();const T=Areq/B,KB=T/2,BM=B*B/(12*Math.max(T,0.05)),GM=KB+BM-KGtot();const d=draft(t,Areq),cs=corners(t,d.yc);return{T,GM,free:Math.min(cs[2].y,cs[3].y)};}
+
+  // auto-ballast: fill the counter-side column (lower tank first, then upper) to bring heel to ~0
+  function autoBallast(){
+    ballast.fill(0);
+    const th0=solveHeel().theta;
+    if(Math.abs(th0)<0.003){syncTankInputs();return;}
+    const idx=th0>0?[0,3]:[2,5];               // port column [lower,upper] or stbd column
+    const cap=tankMax();
+    const apply=q=>{ballast.fill(0);ballast[idx[0]]=Math.min(q,cap);ballast[idx[1]]=clamp(q-cap,0,cap);};
+    let lo=0,hi=2*cap;apply(hi);const thHi=solveHeel().theta;
+    if(Math.sign(thHi)===Math.sign(th0)){apply(hi);}   // even full can't fully correct → best effort
+    else{for(let i=0;i<40;i++){const mid=(lo+hi)/2;apply(mid);const th=solveHeel().theta;((th0>0&&th>0)||(th0<0&&th<0))?lo=mid:hi=mid;}apply((lo+hi)/2);}
+    syncTankInputs();
+  }
+  function syncTankInputs(){for(let i=0;i<6;i++)if(tankIn[i])tankIn[i].value=Math.round(ballast[i]);}
+
+  function computeScale(){const dpr=devicePixelRatio||1,W=cv.width/dpr,Hh=cv.height/dpr;
+    const effHalf=Math.max(B/2,X_CRANE+Math.abs(reach)+2), effVert=H+6;
+    S=clamp(Math.min(W*0.92/(2*effHalf),Hh*0.9/effVert),5,60);}
+
+  const poly=(pts,wx,wy)=>{ctx.beginPath();pts.forEach((p,i)=>{const X=wx(p.x),Y=wy(p.y);i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});ctx.closePath();};
+  function draw(t){const dpr=devicePixelRatio||1,W=cv.width/dpr,Hh=cv.height/dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,Hh);
+    const cx=W/2,cy=Hh*0.62,wx=x=>cx+x*S,wy=y=>cy-y*S;
+    ctx.fillStyle=dark()?'#0e1b26':'#dfeef7';ctx.fillRect(0,0,W,cy);
+    ctx.fillStyle=dark()?'#123043':'#a9d4ec';ctx.fillRect(0,cy,W,Hh-cy);
+    ctx.strokeStyle=dark()?'#2b5c78':'#5fa8d0';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(W,cy);ctx.stroke();
+    const{Areq}=totals();const d=draft(t,Areq),yc=d.yc,cs=corners(t,yc),sp=clip(cs);
+    const wxy=(x,y)=>{const r=rot(x,y,t);return{x:r.x,y:r.y+yc};};
+    ctx.fillStyle=dark()?'#1c4a66':'#6fb6dd';poly(sp,wx,wy);ctx.fill();
+    ctx.fillStyle=dark()?'#3a3a37':'#6b6a63';ctx.strokeStyle=dark()?'#d3d1c7':'#2c2c2a';ctx.lineWidth=2;poly(cs,wx,wy);ctx.fill();ctx.stroke();
+    ctx.fillStyle=dark()?'#1d9e75':'#5dcaa5';
+    for(let i=0;i<6;i++){const h=fillH(i);if(h<0.01)continue;const c=i%3,xL=-B/2+c*colW(),xR=xL+colW(),yb=rowBot(Math.floor(i/3));
+      poly([[xL,yb],[xR,yb],[xR,yb+h],[xL,yb+h]].map(([x,y])=>wxy(x,y)),wx,wy);ctx.fill();}
+    ctx.strokeStyle=dark()?'#9c9a92':'#4a4a46';ctx.lineWidth=1;
+    for(let k=0;k<=3;k++){const x=-B/2+k*colW(),a=wxy(x,-H/2),b=wxy(x,-H/2+balH());ctx.beginPath();ctx.moveTo(wx(a.x),wy(a.y));ctx.lineTo(wx(b.x),wy(b.y));ctx.stroke();}
+    for(const yy of [-H/2+rowH(),-H/2+balH()]){const a=wxy(-B/2,yy),b=wxy(B/2,yy);ctx.beginPath();ctx.moveTo(wx(a.x),wy(a.y));ctx.lineTo(wx(b.x),wy(b.y));ctx.stroke();}
+    ctx.strokeStyle=dark()?'#b4b2a9':'#3d3d3a';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(wx(cs[3].x),wy(cs[3].y));ctx.lineTo(wx(cs[2].x),wy(cs[2].y));ctx.stroke();
+    const base=rot(X_CRANE,H/2,t),mast=rot(X_CRANE,H/2+3.6,t),bX=base.x+reach,bY=mast.y+0.3,loadY=bY-2.4;
+    ctx.lineCap='round';ctx.strokeStyle=dark()?'#e0b24a':'#b07515';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(wx(base.x),wy(base.y+yc));ctx.lineTo(wx(mast.x),wy(mast.y+yc));ctx.stroke();
+    ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(wx(mast.x),wy(mast.y+yc));ctx.lineTo(wx(bX),wy(bY+yc));ctx.stroke();
+    ctx.strokeStyle=dark()?'#888780':'#5f5e5a';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(wx(bX),wy(bY+yc));ctx.lineTo(wx(bX),wy(loadY+yc));ctx.stroke();
+    if(load>0){const s=Math.max(10,Math.sqrt(load)*1.5);ctx.fillStyle=dark()?'#d85a30':'#c04828';ctx.fillRect(wx(bX)-s/2,wy(loadY+yc),s,s);}
+    const gy=rot(0,KGtot()-H/2,t).y+yc,gx=xG(t,yc);
+    ctx.font='600 13px sans-serif';
+    ctx.fillStyle='#e24b4a';ctx.beginPath();ctx.arc(wx(gx),wy(gy),4.5,0,7);ctx.fill();ctx.fillText('G',wx(gx)+8,wy(gy)-6);
+    if(sp.length){ctx.fillStyle='#185fa5';ctx.beginPath();ctx.arc(wx(d.sub.cx),wy(d.sub.cy),4.5,0,7);ctx.fill();ctx.fillText('B',wx(d.sub.cx)+8,wy(d.sub.cy)+14);}
+  }
+
+  const mHeel=document.getElementById('mHeel'),mDraft=document.getElementById('mDraft'),mFree=document.getElementById('mFree'),mGM=document.getElementById('mGM'),status=document.getElementById('status');
+  function recompute(){const r=solveHeel(),met=metrics(r.theta);if(!r.sink)tgt=r.theta;
+    mHeel.textContent=(Math.abs(r.theta*180/Math.PI)).toFixed(1)+'°'+(r.theta>0.002?' stbd':r.theta<-0.002?' port':'');
+    mDraft.textContent=met.T.toFixed(2)+' m';
+    mFree.textContent=(met.free>=0?met.free.toFixed(2):'\u2212'+Math.abs(met.free).toFixed(2))+' m';
+    mGM.textContent=met.GM.toFixed(2)+' m';
+    let msg,cls;
+    if(r.sink){msg='Overloaded \u2014 draft exceeds hull depth, barge is sinking';cls=['--bad-bg','--bad'];}
+    else if(met.free<0){msg='Deck edge submerged \u2014 severe heel, downflooding and capsize risk';cls=['--bad-bg','--bad'];}
+    else if(met.free<0.4||Math.abs(r.theta)>0.44){msg='Large heel \u2014 trim it out with ballast or reduce reach';cls=['--warn-bg','--warn'];}
+    else if(met.GM<0.5){msg='Marginal stability \u2014 GM is low';cls=['--warn-bg','--warn'];}
+    else{msg='Floating within safe trim';cls=['--ok-bg','--ok'];}
+    status.textContent=msg;status.style.background='var('+cls[0]+')';status.style.color='var('+cls[1]+')';}
+
+  const postChange=extra=>()=>{if(extra)extra();if(autoOn)autoBallast();};
+  function field(id,get,set,lo,hi,after){const N=document.getElementById(id);N.value=get();
+    const live=()=>{if(N.value===''||N.value==='-')return;const v=parseFloat(N.value);if(!isNaN(v)){set(clamp(v,lo,hi));if(after)after();recompute();}};
+    const commit=()=>{let v=parseFloat(N.value);v=isNaN(v)?lo:clamp(v,lo,hi);set(v);N.value=v;if(after)after();recompute();};
+    N.addEventListener('input',live);N.addEventListener('blur',commit);N.addEventListener('keydown',e=>{if(e.key==='Enter')N.blur();});return N;}
+
+  field('loadN',()=>load,v=>load=v,0,5000,postChange());
+  field('reachN',()=>reach,v=>reach=v,-20,30,postChange(computeScale));
+
+  // 6 tank inputs
+  const tanksEl=document.getElementById('tanks'),tankIn=[];
+  ['','Port','Ctr','Stbd'].forEach(h=>{const d=document.createElement('div');d.className='hd';d.textContent=h;tanksEl.appendChild(d);});
+  [['Upper',[3,4,5]],['Lower',[0,1,2]]].forEach(([lbl,idx])=>{
+    const rl=document.createElement('div');rl.className='rl';rl.textContent=lbl;tanksEl.appendChild(rl);
+    idx.forEach(i=>{const inp=document.createElement('input');inp.type='number';inp.step=5;inp.min=0;inp.value=0;tanksEl.appendChild(inp);tankIn[i]=inp;
+      const live=()=>{if(inp.value==='')return;const v=parseFloat(inp.value);if(!isNaN(v)){ballast[i]=clamp(v,0,tankMax());recompute();}};
+      const commit=()=>{let v=parseFloat(inp.value);v=isNaN(v)?0:clamp(v,0,tankMax());ballast[i]=v;inp.value=v;recompute();};
+      inp.addEventListener('input',live);inp.addEventListener('blur',commit);inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();});});
+  });
+  function refreshTankLimits(){const mx=Math.round(tankMax());document.getElementById('capNote').textContent='(0\u2013'+mx+' t each)';
+    for(let i=0;i<6;i++){tankIn[i].max=mx;if(ballast[i]>mx){ballast[i]=mx;tankIn[i].value=mx;}}}
+
+  // auto-ballast checkbox
+  const autoChk=document.getElementById('autoChk');
+  autoChk.addEventListener('change',()=>{autoOn=autoChk.checked;tankIn.forEach(inp=>inp.disabled=autoOn);if(autoOn)autoBallast();recompute();});
+
+  const afterHull=postChange(()=>{computeScale();refreshTankLimits();});
+  field('pL',()=>L,v=>L=v,10,400,afterHull);
+  field('pB',()=>B,v=>B=v,3,60,afterHull);
+  field('pH',()=>H,v=>H=v,1,20,afterHull);
+  field('pMB',()=>M_BARGE,v=>M_BARGE=v,0,100000,postChange());
+  field('pKG',()=>KG_BARGE,v=>KG_BARGE=v,0,20,postChange());
+  field('cMass',()=>M_CRANE,v=>M_CRANE=v,0,5000,postChange());
+  field('cOff',()=>X_CRANE,v=>X_CRANE=v,-30,30,postChange(computeScale));
+  field('cKG',()=>KG_CRANE,v=>KG_CRANE=v,0,40,postChange());
+
+  document.getElementById('reset').onclick=()=>{
+    L=60;B=14;H=4;M_BARGE=620;KG_BARGE=1.9;M_CRANE=85;X_CRANE=5;KG_CRANE=6.5;load=150;reach=9;ballast.fill(0);autoOn=false;autoChk.checked=false;
+    const set=(id,v)=>document.getElementById(id).value=v;
+    set('loadN',150);set('reachN',9);set('pL',60);set('pB',14);set('pH',4);set('pMB',620);set('pKG',1.9);set('cMass',85);set('cOff',5);set('cKG',6.5);
+    for(let i=0;i<6;i++){tankIn[i].value=0;tankIn[i].disabled=false;}
+    computeScale();refreshTankLimits();recompute();};
+
+  function resize(){const dpr=devicePixelRatio||1;cv.width=cv.clientWidth*dpr;cv.height=cv.clientHeight*dpr;computeScale();}
+  function loop(){cur+=(tgt-cur)*0.12;draw(cur);requestAnimationFrame(loop);}
+  addEventListener('resize',resize);
+  resize();refreshTankLimits();recompute();loop();
+})();
+</script>
+</body>
+</html>
